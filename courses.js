@@ -9,7 +9,7 @@ const years = [
         cfu: 9,
         semester: "Primo semestre",
         color: "#8b5cf6",
-        folder: "materiali/primo-anno/machine-learning",
+        folder: "materiali/primo%20anno/machine-learning",
 
         description: "",
 
@@ -17,29 +17,29 @@ const years = [
 
         sections: [
           {
-            id: "sli  de",
+            id: "slide",
             title: "Slide delle lezioni",
 
             files: [
               {
                 title: "Slide 1",
                 type: "PDF",
-                file: "materiali/primo-anno/machine-learning/lezioni/lec_B1.pdf"
+                file: "materiali/primo%20anno/machine-learning/lezioni/lec_B1.pdf"
               },
               {
                 title: "Slide 2",
                 type: "PDF",
-                file: "materiali/primo-anno/machine-learning/lezioni/lec_B2.pdf"
+                file: "materiali/primo%20anno/machine-learning/lezioni/lec_B2.pdf"
               },
               {
                 title: "Slide 3",
                 type: "PDF",
-                file: "materiali/primo-anno/machine-learning/lezioni/lec_B3.pdf"
+                file: "materiali/primo%20anno/machine-learning/lezioni/lec_B3.pdf"
               },
               {
                 title: "Slide 4",
                 type: "PDF",
-                file: "materiali/primo-anno/machine-learning/lezioni/lec_B4.pdf"
+                file: "materiali/primo%20anno/machine-learning/lezioni/lec_B4.pdf"
               }
             ]
           },
@@ -52,12 +52,12 @@ const years = [
               {
                 title: "Notebook 1",
                 type: "Notebook",
-                file: "materiali/primo-anno/machine-learning/extra/ML_esercitazione_1.ipynb"
+                file: "materiali/primo%20anno/machine-learning/extra/ML_esercitazione_1.ipynb"
               },
               {
                 title: "Notebook 2",
                 type: "Notebook",
-                file: "materiali/primo-anno/machine-learning/extra/ML_esercitazione_2.ipynb"
+                file: "materiali/primo%20anno/machine-learning/extra/ML_esercitazione_2.ipynb"
               }
             ]
           },
@@ -82,7 +82,7 @@ const years = [
         cfu: 6,
         semester: "Primo semestre",
         color: "#0ea5e9",
-        folder: "materiali/primo-anno/programmazione-dispositivi-mobili",
+        folder: "materiali/primo%20anno/dispositivi-mobili",
 
         description: "",
 
@@ -127,7 +127,7 @@ const years = [
         cfu: 4,
         semester: "Primo semestre",
         color: "#f59e0b",
-        folder: "materiali/primo-anno/lingua-inglese-b2",
+        folder: "materiali/primo%20anno/inglese",
 
         description: "",
 
