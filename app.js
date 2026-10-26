@@ -122,25 +122,8 @@ function createCourseCard(course, query, yearName) {
   const card = makeElement("article", "course");
   card.style.setProperty("--course-color", course.color || "#6ea8fe");
 
-  // Copertina: icona sempre presente, immagine facoltativa.
+  // Copertina colorata, senza immagini e senza icone.
   const cover = makeElement("div", "course-cover");
-  cover.setAttribute("aria-hidden", "true");
-
-  cover.append(
-    makeElement("span", "course-icon", course.icon || "📚")
-  );
-
-  if (course.image) {
-    const image = document.createElement("img");
-    image.src = course.image;
-    image.alt = "";
-    image.loading = "lazy";
-
-    image.addEventListener("error", () => image.remove());
-
-    cover.appendChild(image);
-  }
-
   const sections = course.sections ?? {};
 
   const totalFiles = Object.keys(sectionLabels).reduce(
