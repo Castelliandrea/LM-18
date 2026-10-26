@@ -2,14 +2,11 @@ const coursesEl = document.getElementById("courses");
 const searchEl = document.getElementById("search");
 const heroEl = document.querySelector(".hero");
 
-const sectionLabels = {
-  lezioni: "Lezioni",
-  appunti: "Appunti",
-  simulazioni: "Simulazioni",
-  extra: "Extra"
-};
-
 const defaultTitle = document.title;
+
+// --------------------------------------------------
+// FUNZIONI GENERALI
+// --------------------------------------------------
 
 function normalize(value) {
   return String(value ?? "")
@@ -40,18 +37,47 @@ function courseUrl(course) {
   return `#corso=${encodeURIComponent(courseId(course))}`;
 }
 
+// --------------------------------------------------
+// SEZIONI PERSONALIZZATE
+// --------------------------------------------------
+
 function getCourseSections(course) {
-  return course.sections ?? {};
+  const sections = course.sections;
+
+  // Formato attuale: elenco di sezioni personalizzate.
+  if (Array.isArray(sections)) {
+    return sections.map(section => ({
+      id: section.id,
+      title: section.title || section.id || "Materiali",
+      files: Array.isArray(section.files) ? section.files : []
+    }));
+  }
+
+  // Compatibilità con il vecchio formato a categorie fisse.
+  const oldLabels = {
+    lezioni: "Lezioni",
+    appunti: "Appunti",
+    simulazioni: "Simulazioni",
+    extra: "Extra"
+  };
+
+  return Object.entries(sections ?? {}).map(([key, files]) => ({
+    id: key,
+    title: oldLabels[key] || key,
+    files: Array.isArray(files) ? files : []
+  }));
 }
 
 function countMaterials(course) {
-  const sections = getCourseSections(course);
-
-  return Object.keys(sectionLabels).reduce(
-    (total, key) => total + (sections[key]?.length ?? 0),
+  return getCourseSections(course).reduce(
+    (total, section) => total + section.files.length,
     0
   );
 }
+
+// --------------------------------------------------
+// INFORMAZIONI DEL CORSO
+// --------------------------------------------------
 
 function createMetadata(course) {
   const metadata = makeElement("div", "course-metadata");
@@ -60,7 +86,9 @@ function createMetadata(course) {
     makeElement(
       "span",
       "metadata-badge",
-      course.cfu != null ? `${course.cfu} CFU` : "CFU da inserire"
+      course.cfu != null
+        ? `${course.cfu} CFU`
+        : "CFU da inserire"
     ),
     makeElement(
       "span",
@@ -72,17 +100,23 @@ function createMetadata(course) {
   return metadata;
 }
 
+// --------------------------------------------------
+// COLLEGAMENTI E MATERIALI
+// --------------------------------------------------
+
 function safeUrl(value) {
   if (typeof value !== "string" || !value.trim()) {
     return null;
   }
 
   try {
-    const url = new URL(value, document.baseURI);
+    const url = new URL(value.trim(), document.baseURI);
 
-    return ["http:", "https:"].includes(url.protocol)
-      ? url
-      : null;
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return null;
+    }
+
+    return url;
   } catch {
     return null;
   }
@@ -109,110 +143,23 @@ function createMaterialLink(file) {
   }
 
   const link = makeElement("a", "file");
+
   configureLink(link, url);
 
   link.append(
-    makeElement("span", "file-title", file.title || "Materiale"),
-    makeElement("span", "file-type", file.type || "File")
+    makeElement(
+      "span",
+      "file-title",
+      file.title || "Materiale"
+    ),
+    makeElement(
+      "span",
+      "file-type",
+      file.type || "File"
+    )
   );
 
   return link;
-}
-
-function matchesCourse(course, yearName, query) {
-  if (!query) {
-    return true;
-  }
-
-  // Nella home si cercano solo le informazioni dei corsi.
-  const text = [
-    yearName,
-    course.name,
-    course.professor,
-    course.semester,
-    course.cfu != null ? `${course.cfu} CFU` : ""
-  ].join(" ");
-
-  return normalize(text).includes(query);
-}
-
-function createCourseCard(course) {
-  const card = makeElement("a", "course course-preview");
-
-  card.href = courseUrl(course);
-  card.style.setProperty("--course-color", course.color || "#6ea8fe");
-
-  const cover = makeElement("div", "course-cover");
-  cover.setAttribute("aria-hidden", "true");
-
-  const body = makeElement("div", "course-body");
-
-  body.append(
-    makeElement("h3", "", course.name),
-    makeElement(
-      "p",
-      "course-professor",
-      `Docente: ${course.professor || "Da inserire"}`
-    ),
-    createMetadata(course),
-    makeElement("span", "course-open", "Apri il corso →")
-  );
-
-  card.append(cover, body);
-
-  return card;
-}
-
-function renderHome() {
-  document.title = defaultTitle;
-
-  if (heroEl) {
-    heroEl.hidden = false;
-  }
-
-  const query = normalize(searchEl.value.trim());
-  coursesEl.replaceChildren();
-
-  let total = 0;
-
-  years.forEach(yearData => {
-    const courses = yearData.courses.filter(course =>
-      matchesCourse(course, yearData.year, query)
-    );
-
-    if (courses.length === 0) {
-      return;
-    }
-
-    total += courses.length;
-
-    const section = makeElement("section", "year");
-    const header = makeElement("div", "year-header");
-
-    header.append(
-      makeElement("h2", "", yearData.year),
-      makeElement(
-        "span",
-        "",
-        `${courses.length} ${courses.length === 1 ? "materia" : "materie"}`
-      )
-    );
-
-    const grid = makeElement("div", "courses-grid");
-
-    courses.forEach(course => {
-      grid.appendChild(createCourseCard(course));
-    });
-
-    section.append(header, grid);
-    coursesEl.appendChild(section);
-  });
-
-  if (total === 0) {
-    coursesEl.appendChild(
-      makeElement("p", "empty", "Nessun corso trovato.")
-    );
-  }
 }
 
 function createUsefulLinks(course) {
@@ -232,11 +179,133 @@ function createUsefulLinks(course) {
     );
 
     configureLink(link, url);
+
     container.appendChild(link);
   });
 
   return container;
 }
+
+// --------------------------------------------------
+// HOME: RICERCA E SCHEDE
+// --------------------------------------------------
+
+function matchesCourse(course, yearName, query) {
+  if (!query) {
+    return true;
+  }
+
+  // La ricerca della home riguarda le informazioni di base.
+  const text = [
+    yearName,
+    course.name,
+    course.professor,
+    course.semester,
+    course.cfu != null ? `${course.cfu} CFU` : ""
+  ].join(" ");
+
+  return normalize(text).includes(query);
+}
+
+function createCourseCard(course) {
+  const card = makeElement("a", "course course-preview");
+
+  card.href = courseUrl(course);
+
+  card.style.setProperty(
+    "--course-color",
+    course.color || "#6ea8fe"
+  );
+
+  // Copertina solo colorata: nessuna immagine o icona.
+  const cover = makeElement("div", "course-cover");
+  cover.setAttribute("aria-hidden", "true");
+
+  const body = makeElement("div", "course-body");
+
+  body.append(
+    makeElement("h3", "", course.name),
+    makeElement(
+      "p",
+      "course-professor",
+      `Docente: ${course.professor || "Da inserire"}`
+    ),
+    createMetadata(course),
+    makeElement(
+      "span",
+      "course-open",
+      "Apri il corso →"
+    )
+  );
+
+  card.append(cover, body);
+
+  return card;
+}
+
+function renderHome() {
+  document.title = defaultTitle;
+
+  if (heroEl) {
+    heroEl.hidden = false;
+  }
+
+  const query = normalize(searchEl.value.trim());
+
+  coursesEl.replaceChildren();
+
+  let total = 0;
+
+  years.forEach(yearData => {
+    const matchingCourses = yearData.courses.filter(course =>
+      matchesCourse(course, yearData.year, query)
+    );
+
+    if (matchingCourses.length === 0) {
+      return;
+    }
+
+    total += matchingCourses.length;
+
+    const section = makeElement("section", "year");
+    const header = makeElement("div", "year-header");
+
+    header.append(
+      makeElement("h2", "", yearData.year),
+      makeElement(
+        "span",
+        "",
+        `${matchingCourses.length} ${
+          matchingCourses.length === 1 ? "materia" : "materie"
+        }`
+      )
+    );
+
+    const grid = makeElement("div", "courses-grid");
+
+    matchingCourses.forEach(course => {
+      grid.appendChild(createCourseCard(course));
+    });
+
+    section.append(header, grid);
+
+    coursesEl.appendChild(section);
+  });
+
+  if (total === 0) {
+    coursesEl.appendChild(
+      makeElement(
+        "p",
+        "empty",
+        "Nessun corso trovato."
+      )
+    );
+  }
+}
+
+// --------------------------------------------------
+// PAGINA DEL CORSO
+// --------------------------------------------------
 
 function renderCourse(course, yearName) {
   document.title = `${course.name} · Appunti LM-18`;
@@ -248,7 +317,11 @@ function renderCourse(course, yearName) {
   coursesEl.replaceChildren();
 
   const page = makeElement("article", "course-page");
-  page.style.setProperty("--course-color", course.color || "#6ea8fe");
+
+  page.style.setProperty(
+    "--course-color",
+    course.color || "#6ea8fe"
+  );
 
   const back = makeElement(
     "a",
@@ -260,22 +333,44 @@ function renderCourse(course, yearName) {
 
   const intro = makeElement("div", "course-detail-intro");
 
-  // Pannello decorativo: solo colore e testo, nessuna immagine.
+  // Copertina colorata della pagina del corso.
   const cover = makeElement("div", "course-detail-cover");
 
+  const totalMaterials = countMaterials(course);
+
   cover.append(
-    makeElement("span", "detail-cover-label", "LM-18 · Urbino"),
-    makeElement("span", "detail-cover-name", course.name),
+    makeElement(
+      "span",
+      "detail-cover-label",
+      "LM-18 · Urbino"
+    ),
+    makeElement(
+      "span",
+      "detail-cover-name",
+      course.name
+    ),
     makeElement(
       "span",
       "detail-cover-count",
-      `${countMaterials(course)} materiali disponibili`
+      `${totalMaterials} ${
+        totalMaterials === 1
+          ? "materiale disponibile"
+          : "materiali disponibili"
+      }`
     )
   );
 
-  const information = makeElement("div", "course-information");
+  const information = makeElement(
+    "div",
+    "course-information"
+  );
 
-  const title = makeElement("h1", "course-detail-title", course.name);
+  const title = makeElement(
+    "h1",
+    "course-detail-title",
+    course.name
+  );
+
   title.tabIndex = -1;
 
   information.append(
@@ -291,7 +386,11 @@ function renderCourse(course, yearName) {
 
   if (course.description?.trim()) {
     information.appendChild(
-      makeElement("p", "course-description", course.description)
+      makeElement(
+        "p",
+        "course-description",
+        course.description
+      )
     );
   }
 
@@ -303,33 +402,54 @@ function renderCourse(course, yearName) {
 
   intro.append(cover, information);
 
-  const resources = makeElement("section", "course-resources");
+  const resources = makeElement(
+    "section",
+    "course-resources"
+  );
 
   resources.appendChild(
-    makeElement("h2", "resources-title", "Materiali del corso")
+    makeElement(
+      "h2",
+      "resources-title",
+      "Materiali del corso"
+    )
   );
 
   const sections = getCourseSections(course);
 
-  Object.entries(sectionLabels).forEach(([key, label]) => {
-    const files = sections[key] ?? [];
+  sections.forEach(section => {
+    const files = section.files;
 
-    const details = makeElement("details", "resource-section");
+    const details = makeElement(
+      "details",
+      "resource-section"
+    );
 
-    // Le categorie con contenuti sono aperte inizialmente.
+    // Le sezioni con materiali sono aperte inizialmente.
     details.open = files.length > 0;
 
     const summary = document.createElement("summary");
 
     summary.append(
-      makeElement("span", "resource-name", label),
-      makeElement("span", "category-count", String(files.length))
+      makeElement(
+        "span",
+        "resource-name",
+        section.title
+      ),
+      makeElement(
+        "span",
+        "category-count",
+        String(files.length)
+      )
     );
 
     details.appendChild(summary);
 
     if (files.length > 0) {
-      const list = makeElement("div", "files resource-files");
+      const list = makeElement(
+        "div",
+        "files resource-files"
+      );
 
       files.forEach(file => {
         list.appendChild(createMaterialLink(file));
@@ -349,11 +469,26 @@ function renderCourse(course, yearName) {
     resources.appendChild(details);
   });
 
+  if (sections.length === 0) {
+    resources.appendChild(
+      makeElement(
+        "p",
+        "category-empty",
+        "Le sezioni di questo corso non sono ancora state aggiunte."
+      )
+    );
+  }
+
   page.append(back, intro, resources);
+
   coursesEl.appendChild(page);
 
   title.focus({ preventScroll: true });
 }
+
+// --------------------------------------------------
+// PAGINA NON TROVATA
+// --------------------------------------------------
 
 function renderNotFound() {
   document.title = "Corso non trovato · Appunti LM-18";
@@ -366,12 +501,21 @@ function renderNotFound() {
 
   const wrapper = makeElement("div", "course-page");
 
-  const back = makeElement("a", "back-link", "← Tutti gli esami");
+  const back = makeElement(
+    "a",
+    "back-link",
+    "← Tutti gli esami"
+  );
+
   back.href = "#";
 
   wrapper.append(
     back,
-    makeElement("h1", "course-detail-title", "Corso non trovato"),
+    makeElement(
+      "h1",
+      "course-detail-title",
+      "Corso non trovato"
+    ),
     makeElement(
       "p",
       "course-description",
@@ -382,8 +526,15 @@ function renderNotFound() {
   coursesEl.appendChild(wrapper);
 }
 
+// --------------------------------------------------
+// NAVIGAZIONE
+// --------------------------------------------------
+
 function renderRoute() {
-  const params = new URLSearchParams(window.location.hash.slice(1));
+  const params = new URLSearchParams(
+    window.location.hash.slice(1)
+  );
+
   const requestedId = params.get("corso");
 
   if (requestedId === null) {
@@ -405,18 +556,34 @@ function renderRoute() {
   renderNotFound();
 }
 
+// --------------------------------------------------
+// EVENTI E AVVIO
+// --------------------------------------------------
+
 searchEl.placeholder = "Cerca esame, docente o semestre…";
-searchEl.setAttribute("aria-label", "Cerca tra i corsi");
+
+searchEl.setAttribute(
+  "aria-label",
+  "Cerca tra i corsi"
+);
 
 searchEl.addEventListener("input", () => {
-  if (!new URLSearchParams(location.hash.slice(1)).has("corso")) {
+  const params = new URLSearchParams(
+    window.location.hash.slice(1)
+  );
+
+  if (!params.has("corso")) {
     renderHome();
   }
 });
 
 window.addEventListener("hashchange", () => {
   renderRoute();
-  window.scrollTo({ top: 0, behavior: "instant" });
+
+  window.scrollTo({
+    top: 0,
+    behavior: "instant"
+  });
 });
 
 renderRoute();
