@@ -17,29 +17,29 @@ const years = [
 
         sections: [
           {
-            id: "slide",
+            id: "sli  de",
             title: "Slide delle lezioni",
 
             files: [
               {
                 title: "Slide 1",
                 type: "PDF",
-                file: "materiali/primo-anno/machine-learning/appunti/lec_B1.pdf"
+                file: "materiali/primo-anno/machine-learning/lezioni/lec_B1.pdf"
               },
               {
                 title: "Slide 2",
                 type: "PDF",
-                file: "materiali/primo-anno/machine-learning/appunti/lec_B2.pdf"
+                file: "materiali/primo-anno/machine-learning/lezioni/lec_B2.pdf"
               },
               {
                 title: "Slide 3",
                 type: "PDF",
-                file: "materiali/primo-anno/machine-learning/appunti/lec_B3.pdf"
+                file: "materiali/primo-anno/machine-learning/lezioni/lec_B3.pdf"
               },
               {
                 title: "Slide 4",
                 type: "PDF",
-                file: "materiali/primo-anno/machine-learning/appunti/lec_B4.pdf"
+                file: "materiali/primo-anno/machine-learning/lezioni/lec_B4.pdf"
               }
             ]
           },
@@ -52,12 +52,12 @@ const years = [
               {
                 title: "Notebook 1",
                 type: "Notebook",
-                file: "materiali/primo-anno/machine-learning/appunti/ML_esercitazione_1.ipynb"
+                file: "materiali/primo-anno/machine-learning/extra/ML_esercitazione_1.ipynb"
               },
               {
                 title: "Notebook 2",
                 type: "Notebook",
-                file: "materiali/primo-anno/machine-learning/appunti/ML_esercitazione_2.ipynb"
+                file: "materiali/primo-anno/machine-learning/extra/ML_esercitazione_2.ipynb"
               }
             ]
           },
