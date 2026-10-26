@@ -1,5 +1,6 @@
 const coursesEl = document.getElementById("courses");
 const searchEl = document.getElementById("search");
+const heroEl = document.querySelector(".hero");
 
 const sectionLabels = {
   lezioni: "Lezioni",
@@ -8,12 +9,7 @@ const sectionLabels = {
   extra: "Extra"
 };
 
-const sectionIcons = {
-  lezioni: "🎓",
-  appunti: "📝",
-  simulazioni: "✍️",
-  extra: "📎"
-};
+const defaultTitle = document.title;
 
 function normalize(value) {
   return String(value ?? "")
@@ -36,121 +32,28 @@ function makeElement(tag, className, text) {
   return element;
 }
 
-function iconFor(type) {
-  const value = normalize(type);
-
-  if (value.includes("pdf")) return "📄";
-  if (value.includes("doc")) return "📝";
-  if (value.includes("ppt")) return "📊";
-  if (value.includes("notebook")) return "🐍";
-  if (value.includes("link")) return "🔗";
-  if (value.includes("video")) return "🎬";
-  if (value.includes("codice")) return "💻";
-
-  return "📁";
+function courseId(course) {
+  return course.folder;
 }
 
-function metadataMatches(course, query) {
-  return normalize([
-    course.name,
-    course.professor,
-    course.semester,
-    course.cfu != null ? `${course.cfu} CFU` : ""
-  ].join(" ")).includes(query);
+function courseUrl(course) {
+  return `#corso=${encodeURIComponent(courseId(course))}`;
 }
 
-function fileMatches(file, query) {
-  return normalize(
-    `${file.title ?? ""} ${file.type ?? ""}`
-  ).includes(query);
+function getCourseSections(course) {
+  return course.sections ?? {};
 }
 
-function courseMatchesQuery(course, query, yearName) {
-  if (
-    !query ||
-    normalize(yearName).includes(query) ||
-    metadataMatches(course, query)
-  ) {
-    return true;
-  }
+function countMaterials(course) {
+  const sections = getCourseSections(course);
 
-  return Object.entries(sectionLabels).some(([key, label]) => {
-    const files = course.sections?.[key] ?? [];
-
-    return (
-      normalize(label).includes(query) ||
-      files.some(file => fileMatches(file, query))
-    );
-  });
-}
-
-function createFileLink(file) {
-  const link = makeElement("a", "file");
-
-  const url = new URL(file.file, document.baseURI);
-
-  if (!["http:", "https:"].includes(url.protocol)) {
-    return makeElement(
-      "p",
-      "category-empty",
-      "Collegamento non valido."
-    );
-  }
-
-  link.href = url.href;
-
-  const external = url.origin !== window.location.origin;
-
-  if (external) {
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-  }
-
-  link.append(
-    makeElement(
-      "span",
-      "file-title",
-      `${iconFor(file.type ?? "")} ${file.title}`
-    ),
-    makeElement("span", "file-type", file.type ?? "File")
-  );
-
-  return link;
-}
-
-function createCourseCard(course, query, yearName) {
-  const card = makeElement("article", "course");
-  card.style.setProperty("--course-color", course.color || "#6ea8fe");
-
-  // Copertina colorata, senza immagini e senza icone.
-  const cover = makeElement("div", "course-cover");
-  const sections = course.sections ?? {};
-
-  const totalFiles = Object.keys(sectionLabels).reduce(
+  return Object.keys(sectionLabels).reduce(
     (total, key) => total + (sections[key]?.length ?? 0),
     0
   );
+}
 
-  cover.appendChild(
-    makeElement(
-      "span",
-      "material-count",
-      `${totalFiles} ${totalFiles === 1 ? "materiale" : "materiali"}`
-    )
-  );
-
-  const body = makeElement("div", "course-body");
-
-  body.appendChild(makeElement("h3", "", course.name));
-
-  body.appendChild(
-    makeElement(
-      "p",
-      "course-professor",
-      `Docente: ${course.professor || "Da inserire"}`
-    )
-  );
-
+function createMetadata(course) {
   const metadata = makeElement("div", "course-metadata");
 
   metadata.append(
@@ -166,55 +69,270 @@ function createCourseCard(course, query, yearName) {
     )
   );
 
-  body.appendChild(metadata);
+  return metadata;
+}
 
-  const showAll =
-    !query ||
-    normalize(yearName).includes(query) ||
-    metadataMatches(course, query);
+function safeUrl(value) {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
 
-  const categories = makeElement("div", "course-categories");
+  try {
+    const url = new URL(value, document.baseURI);
 
-  Object.entries(sectionLabels).forEach(([key, label]) => {
-    const files = sections[key] ?? [];
-    const categoryMatches = normalize(label).includes(query);
+    return ["http:", "https:"].includes(url.protocol)
+      ? url
+      : null;
+  } catch {
+    return null;
+  }
+}
 
-    const visibleFiles =
-      showAll || categoryMatches
-        ? files
-        : files.filter(file => fileMatches(file, query));
+function configureLink(link, url) {
+  link.href = url.href;
 
-    if (!showAll && !categoryMatches && visibleFiles.length === 0) {
+  if (url.origin !== window.location.origin) {
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  }
+}
+
+function createMaterialLink(file) {
+  const url = safeUrl(file.file);
+
+  if (!url) {
+    return makeElement(
+      "p",
+      "category-empty",
+      `${file.title || "Materiale"}: collegamento non valido.`
+    );
+  }
+
+  const link = makeElement("a", "file");
+  configureLink(link, url);
+
+  link.append(
+    makeElement("span", "file-title", file.title || "Materiale"),
+    makeElement("span", "file-type", file.type || "File")
+  );
+
+  return link;
+}
+
+function matchesCourse(course, yearName, query) {
+  if (!query) {
+    return true;
+  }
+
+  // Nella home si cercano solo le informazioni dei corsi.
+  const text = [
+    yearName,
+    course.name,
+    course.professor,
+    course.semester,
+    course.cfu != null ? `${course.cfu} CFU` : ""
+  ].join(" ");
+
+  return normalize(text).includes(query);
+}
+
+function createCourseCard(course) {
+  const card = makeElement("a", "course course-preview");
+
+  card.href = courseUrl(course);
+  card.style.setProperty("--course-color", course.color || "#6ea8fe");
+
+  const cover = makeElement("div", "course-cover");
+  cover.setAttribute("aria-hidden", "true");
+
+  const body = makeElement("div", "course-body");
+
+  body.append(
+    makeElement("h3", "", course.name),
+    makeElement(
+      "p",
+      "course-professor",
+      `Docente: ${course.professor || "Da inserire"}`
+    ),
+    createMetadata(course),
+    makeElement("span", "course-open", "Apri il corso →")
+  );
+
+  card.append(cover, body);
+
+  return card;
+}
+
+function renderHome() {
+  document.title = defaultTitle;
+
+  if (heroEl) {
+    heroEl.hidden = false;
+  }
+
+  const query = normalize(searchEl.value.trim());
+  coursesEl.replaceChildren();
+
+  let total = 0;
+
+  years.forEach(yearData => {
+    const courses = yearData.courses.filter(course =>
+      matchesCourse(course, yearData.year, query)
+    );
+
+    if (courses.length === 0) {
       return;
     }
 
-    const details = makeElement("details", "category");
+    total += courses.length;
 
-    // Durante una ricerca, apre le sezioni con risultati.
-    details.open = Boolean(query) && visibleFiles.length > 0;
+    const section = makeElement("section", "year");
+    const header = makeElement("div", "year-header");
+
+    header.append(
+      makeElement("h2", "", yearData.year),
+      makeElement(
+        "span",
+        "",
+        `${courses.length} ${courses.length === 1 ? "materia" : "materie"}`
+      )
+    );
+
+    const grid = makeElement("div", "courses-grid");
+
+    courses.forEach(course => {
+      grid.appendChild(createCourseCard(course));
+    });
+
+    section.append(header, grid);
+    coursesEl.appendChild(section);
+  });
+
+  if (total === 0) {
+    coursesEl.appendChild(
+      makeElement("p", "empty", "Nessun corso trovato.")
+    );
+  }
+}
+
+function createUsefulLinks(course) {
+  const container = makeElement("div", "course-useful-links");
+
+  (course.links ?? []).forEach(item => {
+    const url = safeUrl(item.url);
+
+    if (!url) {
+      return;
+    }
+
+    const link = makeElement(
+      "a",
+      "useful-link",
+      item.title || "Collegamento"
+    );
+
+    configureLink(link, url);
+    container.appendChild(link);
+  });
+
+  return container;
+}
+
+function renderCourse(course, yearName) {
+  document.title = `${course.name} · Appunti LM-18`;
+
+  if (heroEl) {
+    heroEl.hidden = true;
+  }
+
+  coursesEl.replaceChildren();
+
+  const page = makeElement("article", "course-page");
+  page.style.setProperty("--course-color", course.color || "#6ea8fe");
+
+  const back = makeElement(
+    "a",
+    "back-link",
+    "← Tutti gli esami"
+  );
+
+  back.href = "#";
+
+  const intro = makeElement("div", "course-detail-intro");
+
+  // Pannello decorativo: solo colore e testo, nessuna immagine.
+  const cover = makeElement("div", "course-detail-cover");
+
+  cover.append(
+    makeElement("span", "detail-cover-label", "LM-18 · Urbino"),
+    makeElement("span", "detail-cover-name", course.name),
+    makeElement(
+      "span",
+      "detail-cover-count",
+      `${countMaterials(course)} materiali disponibili`
+    )
+  );
+
+  const information = makeElement("div", "course-information");
+
+  const title = makeElement("h1", "course-detail-title", course.name);
+  title.tabIndex = -1;
+
+  information.append(
+    makeElement("p", "eyebrow", yearName),
+    title,
+    makeElement(
+      "p",
+      "course-professor",
+      `Docente: ${course.professor || "Da inserire"}`
+    ),
+    createMetadata(course)
+  );
+
+  if (course.description?.trim()) {
+    information.appendChild(
+      makeElement("p", "course-description", course.description)
+    );
+  }
+
+  const usefulLinks = createUsefulLinks(course);
+
+  if (usefulLinks.childElementCount > 0) {
+    information.appendChild(usefulLinks);
+  }
+
+  intro.append(cover, information);
+
+  const resources = makeElement("section", "course-resources");
+
+  resources.appendChild(
+    makeElement("h2", "resources-title", "Materiali del corso")
+  );
+
+  const sections = getCourseSections(course);
+
+  Object.entries(sectionLabels).forEach(([key, label]) => {
+    const files = sections[key] ?? [];
+
+    const details = makeElement("details", "resource-section");
+
+    // Le categorie con contenuti sono aperte inizialmente.
+    details.open = files.length > 0;
 
     const summary = document.createElement("summary");
 
     summary.append(
-      makeElement(
-        "span",
-        "category-label",
-        `${sectionIcons[key]} ${label}`
-      ),
-      makeElement(
-        "span",
-        "category-count",
-        String(visibleFiles.length)
-      )
+      makeElement("span", "resource-name", label),
+      makeElement("span", "category-count", String(files.length))
     );
 
     details.appendChild(summary);
 
-    if (visibleFiles.length > 0) {
-      const list = makeElement("div", "files category-files");
+    if (files.length > 0) {
+      const list = makeElement("div", "files resource-files");
 
-      visibleFiles.forEach(file => {
-        list.appendChild(createFileLink(file));
+      files.forEach(file => {
+        list.appendChild(createMaterialLink(file));
       });
 
       details.appendChild(list);
@@ -228,72 +346,77 @@ function createCourseCard(course, query, yearName) {
       );
     }
 
-    categories.appendChild(details);
+    resources.appendChild(details);
   });
 
-  body.appendChild(categories);
-  card.append(cover, body);
+  page.append(back, intro, resources);
+  coursesEl.appendChild(page);
 
-  return card;
+  title.focus({ preventScroll: true });
 }
 
-function render(query = "") {
-  const normalizedQuery = normalize(query.trim());
+function renderNotFound() {
+  document.title = "Corso non trovato · Appunti LM-18";
+
+  if (heroEl) {
+    heroEl.hidden = true;
+  }
 
   coursesEl.replaceChildren();
 
-  let totalCourses = 0;
+  const wrapper = makeElement("div", "course-page");
 
-  years.forEach(yearData => {
-    const matchingCourses = yearData.courses.filter(course =>
-      courseMatchesQuery(course, normalizedQuery, yearData.year)
-    );
+  const back = makeElement("a", "back-link", "← Tutti gli esami");
+  back.href = "#";
 
-    if (matchingCourses.length === 0) {
-      return;
-    }
+  wrapper.append(
+    back,
+    makeElement("h1", "course-detail-title", "Corso non trovato"),
+    makeElement(
+      "p",
+      "course-description",
+      "Il collegamento potrebbe essere cambiato."
+    )
+  );
 
-    totalCourses += matchingCourses.length;
-
-    const yearSection = makeElement("section", "year");
-    const header = makeElement("div", "year-header");
-
-    header.append(
-      makeElement("h2", "", yearData.year),
-      makeElement(
-        "span",
-        "",
-        `${matchingCourses.length} ${
-          matchingCourses.length === 1 ? "materia" : "materie"
-        }`
-      )
-    );
-
-    const grid = makeElement("div", "courses-grid");
-
-    matchingCourses.forEach(course => {
-      grid.appendChild(
-        createCourseCard(course, normalizedQuery, yearData.year)
-      );
-    });
-
-    yearSection.append(header, grid);
-    coursesEl.appendChild(yearSection);
-  });
-
-  if (totalCourses === 0) {
-    coursesEl.appendChild(
-      makeElement(
-        "p",
-        "empty",
-        "Nessun risultato trovato. Prova un’altra ricerca."
-      )
-    );
-  }
+  coursesEl.appendChild(wrapper);
 }
 
-searchEl.addEventListener("input", event => {
-  render(event.target.value);
+function renderRoute() {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const requestedId = params.get("corso");
+
+  if (requestedId === null) {
+    renderHome();
+    return;
+  }
+
+  for (const yearData of years) {
+    const course = yearData.courses.find(
+      item => courseId(item) === requestedId
+    );
+
+    if (course) {
+      renderCourse(course, yearData.year);
+      return;
+    }
+  }
+
+  renderNotFound();
+}
+
+searchEl.placeholder = "Cerca esame, docente o semestre…";
+searchEl.setAttribute("aria-label", "Cerca tra i corsi");
+
+searchEl.addEventListener("input", () => {
+  if (!new URLSearchParams(location.hash.slice(1)).has("corso")) {
+    renderHome();
+  }
 });
 
-render();
+window.addEventListener("hashchange", () => {
+  renderRoute();
+  window.scrollTo({ top: 0, behavior: "instant" });
+});
+
+renderRoute();
