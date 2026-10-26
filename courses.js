@@ -43,9 +43,40 @@ const years = [
         folder: "materiali/primo-anno/machine-learning",
 
         sections: {
-          lezioni: [],
+          lezioni: [
+
+            {
+              title: "Slide 1",
+              type: "PDF",
+              file: "materiali/primo-anno/machine-learning/appunti/lec_B1.pdf"
+            },
+            {
+              title: "Slide 2",
+              type: "PDF",
+              file: "materiali/primo-anno/machine-learning/appunti/lec_B2.pdf"
+            },
+            {
+              title: "Slide 3",
+              type: "PDF",
+              file: "materiali/primo-anno/machine-learning/appunti/lec_B3.pdf"
+            },
+            {
+              title: "Slide 4",
+              type: "PDF",
+              file: "materiali/primo-anno/machine-learning/appunti/lec_B4.pdf"
+            }
+          ],
           appunti: [],
-          simulazioni: [],
+          simulazioni: [{
+            title: "Notebook 1",
+            type: "Notebook",
+            file: "materiali/primo-anno/machine-learning/appunti/ML_esercitazione_1.ipynb"
+          },
+          {
+            title: "Notebook 2",
+            type: "Notebook",
+            file: "materiali/primo-anno/machine-learning/appunti/ML_esercitazione_2.ipynb"
+          }],
           extra: []
         }
       },
