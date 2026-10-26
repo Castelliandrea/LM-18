@@ -240,3 +240,195 @@ code {
     gap: 4px;
   }
 }
+
+/* Schede degli esami */
+
+.courses-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  align-items: start;
+}
+
+.course {
+  padding: 0;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.course-cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 150px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--course-color, #6ea8fe);
+}
+
+.course-cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 255, 255, 0.28),
+      transparent 55%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(11, 16, 32, 0.1),
+      rgba(11, 16, 32, 0.75)
+    );
+}
+
+.course-icon {
+  font-size: 64px;
+  line-height: 1;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.2));
+}
+
+.course-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.material-count {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(11, 16, 32, 0.8);
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.course-body {
+  padding: 22px;
+}
+
+.course h3 {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.course-professor {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.course-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.metadata-badge {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.course-categories {
+  display: grid;
+  gap: 8px;
+}
+
+.category {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.category summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.category summary::-webkit-details-marker {
+  display: none;
+}
+
+.category summary::after {
+  content: "+";
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.category[open] summary::after {
+  content: "−";
+}
+
+.category summary:hover {
+  background: rgba(110, 168, 254, 0.08);
+}
+
+.category summary:focus-visible,
+.file:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.category-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.category-count {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.category-files {
+  padding: 0 10px 10px;
+}
+
+.category-empty {
+  margin: 0;
+  padding: 0 13px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.file-title {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .course,
+  .file {
+    transition: none;
+  }
+
+  .course:hover {
+    transform: none;
+  }
+}

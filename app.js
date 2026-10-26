@@ -8,8 +8,36 @@ const sectionLabels = {
   extra: "Extra"
 };
 
+const sectionIcons = {
+  lezioni: "🎓",
+  appunti: "📝",
+  simulazioni: "✍️",
+  extra: "📎"
+};
+
+function normalize(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function makeElement(tag, className, text) {
+  const element = document.createElement(tag);
+
+  if (className) {
+    element.className = className;
+  }
+
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+
+  return element;
+}
+
 function iconFor(type) {
-  const value = type.toLowerCase();
+  const value = normalize(type);
 
   if (value.includes("pdf")) return "📄";
   if (value.includes("doc")) return "📝";
@@ -22,100 +50,220 @@ function iconFor(type) {
   return "📁";
 }
 
+function metadataMatches(course, query) {
+  return normalize([
+    course.name,
+    course.professor,
+    course.semester,
+    course.cfu != null ? `${course.cfu} CFU` : ""
+  ].join(" ")).includes(query);
+}
+
+function fileMatches(file, query) {
+  return normalize(
+    `${file.title ?? ""} ${file.type ?? ""}`
+  ).includes(query);
+}
+
+function courseMatchesQuery(course, query, yearName) {
+  if (
+    !query ||
+    normalize(yearName).includes(query) ||
+    metadataMatches(course, query)
+  ) {
+    return true;
+  }
+
+  return Object.entries(sectionLabels).some(([key, label]) => {
+    const files = course.sections?.[key] ?? [];
+
+    return (
+      normalize(label).includes(query) ||
+      files.some(file => fileMatches(file, query))
+    );
+  });
+}
+
 function createFileLink(file) {
-  const isExternal = file.file.startsWith("http");
+  const link = makeElement("a", "file");
 
-  const link = document.createElement("a");
-  link.className = "file";
-  link.href = file.file;
-  link.target = isExternal ? "_blank" : "_self";
-  link.rel = "noopener";
+  const url = new URL(file.file, document.baseURI);
 
-  link.innerHTML = `
-    <span class="file-title">
-      ${iconFor(file.type)} ${file.title}
-    </span>
-    <span class="file-type">${file.type}</span>
-  `;
+  if (!["http:", "https:"].includes(url.protocol)) {
+    return makeElement(
+      "p",
+      "category-empty",
+      "Collegamento non valido."
+    );
+  }
+
+  link.href = url.href;
+
+  const external = url.origin !== window.location.origin;
+
+  if (external) {
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  }
+
+  link.append(
+    makeElement(
+      "span",
+      "file-title",
+      `${iconFor(file.type ?? "")} ${file.title}`
+    ),
+    makeElement("span", "file-type", file.type ?? "File")
+  );
 
   return link;
 }
 
-function courseMatchesQuery(course, query) {
-  const courseText = `${course.name} ${course.semester}`.toLowerCase();
+function createCourseCard(course, query, yearName) {
+  const card = makeElement("article", "course");
+  card.style.setProperty("--course-color", course.color || "#6ea8fe");
 
-  if (courseText.includes(query)) {
-    return true;
+  // Copertina: icona sempre presente, immagine facoltativa.
+  const cover = makeElement("div", "course-cover");
+  cover.setAttribute("aria-hidden", "true");
+
+  cover.append(
+    makeElement("span", "course-icon", course.icon || "📚")
+  );
+
+  if (course.image) {
+    const image = document.createElement("img");
+    image.src = course.image;
+    image.alt = "";
+    image.loading = "lazy";
+
+    image.addEventListener("error", () => image.remove());
+
+    cover.appendChild(image);
   }
 
-  return Object.values(course.sections)
-    .flat()
-    .some(file => {
-      const fileText = `${file.title} ${file.type}`.toLowerCase();
-      return fileText.includes(query);
-    });
-}
+  const sections = course.sections ?? {};
 
-function createCourseCard(course, query) {
-  const card = document.createElement("article");
-  card.className = "course";
+  const totalFiles = Object.keys(sectionLabels).reduce(
+    (total, key) => total + (sections[key]?.length ?? 0),
+    0
+  );
 
-  card.innerHTML = `
-    <h3>${course.name}</h3>
-    <p class="meta">${course.semester}</p>
-    <div class="sections"></div>
-  `;
+  cover.appendChild(
+    makeElement(
+      "span",
+      "material-count",
+      `${totalFiles} ${totalFiles === 1 ? "materiale" : "materiali"}`
+    )
+  );
 
-  const sectionsEl = card.querySelector(".sections");
-  let hasVisibleContent = false;
+  const body = makeElement("div", "course-body");
 
-  Object.entries(course.sections).forEach(([sectionKey, files]) => {
-    const filteredFiles = files.filter(file => {
-      const fileText = `${file.title} ${file.type}`.toLowerCase();
-      const courseText = `${course.name} ${course.semester}`.toLowerCase();
+  body.appendChild(makeElement("h3", "", course.name));
 
-      return (
-        fileText.includes(query) ||
-        courseText.includes(query)
-      );
-    });
+  body.appendChild(
+    makeElement(
+      "p",
+      "course-professor",
+      `Docente: ${course.professor || "Da inserire"}`
+    )
+  );
 
-    if (filteredFiles.length === 0) {
+  const metadata = makeElement("div", "course-metadata");
+
+  metadata.append(
+    makeElement(
+      "span",
+      "metadata-badge",
+      course.cfu != null ? `${course.cfu} CFU` : "CFU da inserire"
+    ),
+    makeElement(
+      "span",
+      "metadata-badge",
+      course.semester || "Semestre da inserire"
+    )
+  );
+
+  body.appendChild(metadata);
+
+  const showAll =
+    !query ||
+    normalize(yearName).includes(query) ||
+    metadataMatches(course, query);
+
+  const categories = makeElement("div", "course-categories");
+
+  Object.entries(sectionLabels).forEach(([key, label]) => {
+    const files = sections[key] ?? [];
+    const categoryMatches = normalize(label).includes(query);
+
+    const visibleFiles =
+      showAll || categoryMatches
+        ? files
+        : files.filter(file => fileMatches(file, query));
+
+    if (!showAll && !categoryMatches && visibleFiles.length === 0) {
       return;
     }
 
-    hasVisibleContent = true;
+    const details = makeElement("details", "category");
 
-    const section = document.createElement("div");
-    section.className = "section";
+    // Durante una ricerca, apre le sezioni con risultati.
+    details.open = Boolean(query) && visibleFiles.length > 0;
 
-    section.innerHTML = `
-      <h4>${sectionLabels[sectionKey]}</h4>
-      <div class="files"></div>
-    `;
+    const summary = document.createElement("summary");
 
-    const filesEl = section.querySelector(".files");
+    summary.append(
+      makeElement(
+        "span",
+        "category-label",
+        `${sectionIcons[key]} ${label}`
+      ),
+      makeElement(
+        "span",
+        "category-count",
+        String(visibleFiles.length)
+      )
+    );
 
-    filteredFiles.forEach(file => {
-      filesEl.appendChild(createFileLink(file));
-    });
+    details.appendChild(summary);
 
-    sectionsEl.appendChild(section);
+    if (visibleFiles.length > 0) {
+      const list = makeElement("div", "files category-files");
+
+      visibleFiles.forEach(file => {
+        list.appendChild(createFileLink(file));
+      });
+
+      details.appendChild(list);
+    } else {
+      details.appendChild(
+        makeElement(
+          "p",
+          "category-empty",
+          "Nessun materiale caricato per ora."
+        )
+      );
+    }
+
+    categories.appendChild(details);
   });
 
-  return hasVisibleContent ? card : null;
+  body.appendChild(categories);
+  card.append(cover, body);
+
+  return card;
 }
 
 function render(query = "") {
-  const normalizedQuery = query.trim().toLowerCase();
+  const normalizedQuery = normalize(query.trim());
 
-  coursesEl.innerHTML = "";
+  coursesEl.replaceChildren();
 
   let totalCourses = 0;
 
   years.forEach(yearData => {
     const matchingCourses = yearData.courses.filter(course =>
-      courseMatchesQuery(course, normalizedQuery)
+      courseMatchesQuery(course, normalizedQuery, yearData.year)
     );
 
     if (matchingCourses.length === 0) {
@@ -124,37 +272,40 @@ function render(query = "") {
 
     totalCourses += matchingCourses.length;
 
-    const yearSection = document.createElement("section");
-    yearSection.className = "year";
+    const yearSection = makeElement("section", "year");
+    const header = makeElement("div", "year-header");
 
-    yearSection.innerHTML = `
-      <div class="year-header">
-        <h2>${yearData.year}</h2>
-        <span>
-          ${matchingCourses.length}
-          ${matchingCourses.length === 1 ? "materia" : "materie"}
-        </span>
-      </div>
-      <div class="courses-grid"></div>
-    `;
+    header.append(
+      makeElement("h2", "", yearData.year),
+      makeElement(
+        "span",
+        "",
+        `${matchingCourses.length} ${
+          matchingCourses.length === 1 ? "materia" : "materie"
+        }`
+      )
+    );
 
-    const grid = yearSection.querySelector(".courses-grid");
+    const grid = makeElement("div", "courses-grid");
 
     matchingCourses.forEach(course => {
-      const card = createCourseCard(course, normalizedQuery);
-
-      if (card) {
-        grid.appendChild(card);
-      }
+      grid.appendChild(
+        createCourseCard(course, normalizedQuery, yearData.year)
+      );
     });
 
+    yearSection.append(header, grid);
     coursesEl.appendChild(yearSection);
   });
 
   if (totalCourses === 0) {
-    coursesEl.innerHTML = `
-      <p class="empty">Nessun materiale trovato.</p>
-    `;
+    coursesEl.appendChild(
+      makeElement(
+        "p",
+        "empty",
+        "Nessun risultato trovato. Prova un’altra ricerca."
+      )
+    );
   }
 }
 

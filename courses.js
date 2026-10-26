@@ -4,7 +4,12 @@ const years = [
     courses: [
       {
         name: "Machine Learning",
-        semester: "1º semestre · 9 CFU",
+        professor: "Da inserire",
+        cfu: 9,
+        semester: "1º semestre",
+        icon: "🧠",
+        color: "#8b5cf6",
+        image: "",
         folder: "materiali/primo-anno/machine-learning",
         sections: {
           lezioni: [],
