@@ -723,3 +723,51 @@ code {
     margin-top: 36px;
   }
 }
+
+.contribute-box {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.contribute-box p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.contribute-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border: 1px solid rgba(110, 168, 254, 0.35);
+  border-radius: 12px;
+  background: rgba(110, 168, 254, 0.12);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.contribute-button:hover {
+  border-color: var(--accent);
+  background: rgba(110, 168, 254, 0.22);
+}
+
+.contribute-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.contribute-box small {
+  color: var(--muted);
+  font-size: 12px;
+}

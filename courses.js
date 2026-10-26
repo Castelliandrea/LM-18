@@ -36,9 +36,9 @@ const years = [
     courses: [
       {
         name: "Machine Learning",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Semestre da inserire",
+        professor: "Valerio Freschi",
+        cfu: 9,
+        semester: "Primo semestre",
         color: "#8b5cf6",
         folder: "materiali/primo-anno/machine-learning",
 
@@ -52,9 +52,9 @@ const years = [
 
       {
         name: "Programmazione di Dispositivi Mobili e Interfacce Utente",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Semestre da inserire",
+        professor: "Lorenzo Calisti",
+        cfu: 6,
+        semester: "Primo semestre",
         color: "#0ea5e9",
         folder: "materiali/primo-anno/programmazione-dispositivi-mobili",
 
@@ -68,9 +68,9 @@ const years = [
 
       {
         name: "Lingua Inglese B2",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Semestre da inserire",
+        professor: "Benedetta Brilli",
+        cfu: 4,
+        semester: "Primo Semestre",
         color: "#f59e0b",
         folder: "materiali/primo-anno/lingua-inglese-b2",
 
@@ -82,157 +82,6 @@ const years = [
         }
       },
 
-      {
-        name: "Sicurezza Informatica",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Semestre da inserire",
-        color: "#ef4444",
-        folder: "materiali/primo-anno/sicurezza-informatica",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      },
-
-      {
-        name: "Sistemi Distribuiti e Decentralizzati",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Semestre da inserire",
-        color: "#14b8a6",
-        folder: "materiali/primo-anno/sistemi-distribuiti-e-decentralizzati",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      },
-
-      {
-        name: "Metodi Numerici per l’Algebra Lineare e l’Analisi Funzionale",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Semestre da inserire",
-        color: "#6366f1",
-        folder: "materiali/primo-anno/metodi-numerici",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      },
-
-      {
-        name: "Principi di Intelligenza Artificiale",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Semestre da inserire",
-        color: "#d946ef",
-        folder: "materiali/primo-anno/principi-intelligenza-artificiale",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      }
-    ]
-  },
-
-  {
-    year: "Secondo anno",
-
-    // Materie iniziali modificabili:
-    // mantieni solo gli insegnamenti del tuo piano personale.
-    courses: [
-      {
-        name: "Applicazioni Distribuite e Cloud Computing",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Da inserire · insegnamento a scelta",
-        color: "#0284c7",
-        folder: "materiali/secondo-anno/applicazioni-distribuite-cloud",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      },
-
-      {
-        name: "Elaborazione dei Dati Sperimentali",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Da inserire · insegnamento a scelta",
-        color: "#10b981",
-        folder: "materiali/secondo-anno/elaborazione-dati-sperimentali",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      },
-
-      {
-        name: "Programmazione per l’Internet of Things",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Da inserire · insegnamento a scelta",
-        color: "#f97316",
-        folder: "materiali/secondo-anno/programmazione-iot",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      },
-
-      {
-        name: "Deep Learning",
-        professor: "Da inserire",
-        cfu: null,
-        semester: "Da inserire · insegnamento a scelta",
-        color: "#a855f7",
-        folder: "materiali/secondo-anno/deep-learning",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      },
-
-      {
-        name: "Tesi",
-        professor: "Relatore da inserire",
-        cfu: null,
-        semester: "Prova finale",
-        color: "#475569",
-        folder: "materiali/secondo-anno/tesi",
-
-        sections: {
-          lezioni: [],
-          appunti: [],
-          simulazioni: [],
-          extra: []
-        }
-      }
     ]
   }
 ];
